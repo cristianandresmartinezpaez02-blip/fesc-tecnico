@@ -201,3 +201,4 @@ El detalle de cada uno está en [incident-report.md](incident-report.md).
 - Las fechas inválidas se reportan pero se dejan tal cual en la base; corregirlas requiere el dato real de Operaciones.
 - Los afiliados sin empresa, los beneficiarios huérfanos y los códigos de estado inválidos se reportan como excepción pero no se corrigen, porque falta información en el origen.
 - La API devuelve `INVALIDO` para estados distintos de A e I; el contrato no define ese caso.
+- En Windows, run.sh y los scripts se ejecutan con Git Bash; en PowerShell se usa curl.exe en lugar de curl para probar la API.
