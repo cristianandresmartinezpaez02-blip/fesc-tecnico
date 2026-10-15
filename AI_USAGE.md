@@ -27,3 +27,10 @@
 - Prompt principal (resumido): "Haz un commit por incidente con un mensaje descriptivo en español"
 - Qué produjo: los commits de los incidentes 1 y 2, pero el primero incluía los dos cambios de `.env.example` (intervalo y host)
 - Qué modificó o corrigió el equipo: deshicimos esos dos commits y los separamos para que cada uno tenga solo la línea de su incidente, así el historial explica qué arregló cada cambio
+
+## Uso 5
+- Herramienta: Claude Code (modelo Claude Opus 5.5) en VS Code
+- Para qué se usó: dejar el README completo para el validador y mejorar su presentación
+- Prompt principal (resumido): "Separa el curl y la respuesta JSON en la sección Uso sin comentarios que empiecen con #, y agrega tabla de resultados, diagrama mermaid y tabla de incidentes"
+- Qué produjo: un README con bloques bash y json separados, tablas de resultado, configuración, salidas e incidentes, y un diagrama de arquitectura en Mermaid
+- Qué modificó o corrigió el equipo: comprobamos con `./validator entregables` que el comentario `# {"documento"...}` del bloque de código se leía como título y cortaba la sección Uso (TE08 pasó de 1.82 a 2.00); además, un reemplazo con sed que la IA propuso para `run.sh` no se aplicó, lo detectamos leyendo el archivo y validamos con md5sum que las salidas no cambiaron
