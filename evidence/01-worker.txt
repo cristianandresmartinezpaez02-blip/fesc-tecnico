@@ -1,0 +1,32 @@
+# Incidente 1 - cierre-worker en Exited (1)
+# Diagnostico (salida real de terminal, 2026-10-15 00:57)
+
+$ grep -c 'CIE-1107' logs/worker.log
+158
+
+$ grep -m 3 'CIE-1107' logs/worker.log
+[2026-09-30T20:35:25Z] [ERROR] codigo=CIE-1107 detalle="Configuración inválida del intervalo de ejecución" lote=281
+[2026-09-30T20:35:30Z] [ERROR] codigo=CIE-1107 detalle="Configuración inválida del intervalo de ejecución" lote=300
+[2026-09-30T20:35:43Z] [ERROR] codigo=CIE-1107 detalle="Configuración inválida del intervalo de ejecución" lote=388
+
+$ grep -n 'int(raw)' -B2 -A4 services/worker/worker.py
+17-    raw = os.environ.get("WORKER_INTERVAL_SECONDS", "")
+18-    try:
+19:        return int(raw)
+20-    except ValueError:
+21-        log("ERROR", "codigo=CIE-1107 WORKER_INTERVAL_SECONDS debe ser un entero de segundos; valor recibido: '{0}'".format(raw))
+22-        sys.exit(1)
+23-
+
+$ git show e9b29b3:.env.example | grep -n WORKER_INTERVAL_SECONDS
+17:WORKER_INTERVAL_SECONDS=30s
+
+# Correccion: el valor debe ser un entero de segundos
+$ grep -n WORKER_INTERVAL_SECONDS .env.example
+17:WORKER_INTERVAL_SECONDS=30
+
+$ git diff e9b29b3 -- .env.example | grep -E '^[-+]WORKER'
+-WORKER_INTERVAL_SECONDS=30s
++WORKER_INTERVAL_SECONDS=30
+
+# Verificacion con Docker (pendiente de pegar: docker compose ps / docker compose logs cierre-worker)
