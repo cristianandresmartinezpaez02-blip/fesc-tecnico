@@ -30,4 +30,18 @@ $ git diff e9b29b3 -- .env.example | grep -E '^[-+]WORKER'
 -WORKER_INTERVAL_SECONDS=30s
 +WORKER_INTERVAL_SECONDS=30
 
-# Verificacion con Docker (pendiente de pegar: docker compose ps / docker compose logs cierre-worker)
+# Verificacion con Docker (2026-10-15 14:03)
+$ docker compose ps
+NAME                              IMAGE                           COMMAND                  SERVICE         CREATED         STATUS                   PORTS
+terminal-rescue-cierre-api-1      terminal-rescue-cierre-api      "python app.py"          cierre-api      9 seconds ago   Up 4 seconds             0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
+terminal-rescue-cierre-db-1       postgres:16-alpine              "docker-entrypoint.s…"   cierre-db       9 seconds ago   Up 8 seconds (healthy)   5432/tcp
+terminal-rescue-cierre-worker-1   terminal-rescue-cierre-worker   "python worker.py"       cierre-worker   9 seconds ago   Up 4 seconds             
+[codigo de salida: 0]
+
+$ docker compose logs cierre-worker | tail -5
+cierre-worker-1  | [2026-10-15T19:03:25Z] [INFO] cierre-worker iniciado; intervalo=30s
+cierre-worker-1  | [2026-10-15T19:03:25Z] [INFO] conciliacion registros=1500 documentos_distintos=1500
+[codigo de salida: 0]
+
+
+Verificacion con Docker en Windows (2026-10-15 14:06): docker compose ps muestra cierre-worker Up 2 minutes, y docker compose logs cierre-worker --tail 5 muestra conciliacion registros=1500 documentos_distintos=1500 cada 30 segundos, sin errores.
