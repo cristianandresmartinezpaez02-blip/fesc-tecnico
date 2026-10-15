@@ -1,0 +1,37 @@
+# Incidente 9 - Totales que no cuadran con la hoja de control
+# Salida real de terminal, 2026-10-15 01:00
+
+$ cat control/hoja_control.csv
+clave,valor
+fecha_corte,2026-09-30
+total_afiliados,1500
+activos,1194
+inactivos,274
+
+## Script heredado: contaba filas (1520) en vez de documentos distintos y todo A como activo
+$ tail -n +2 data/AFI_MAE.csv | wc -l
+1520
+
+$ tail -n +2 data/AFI_MAE.csv | cut -d, -f1 | sort -u | wc -l
+1500
+
+$ awk -F, 'NR>1 && $7=="A"' data/AFI_MAE.csv | wc -l
+1225
+
+## Con las reglas del diccionario: primera aparicion, sin CODIGO_INVALIDO, activos sin SIN_EMPRESA
+$ cat output/totales.txt
+total_afiliados=1500
+activos=1194
+inactivos=274
+excepciones=104
+
+$ tail -n +2 output/excepciones.csv | wc -l
+104
+
+$ tail -n +2 output/afiliados_activos.csv | wc -l
+1194
+
+## Comparacion automatica contra la hoja de control
+$ tail -n +3 control/hoja_control.csv | tr ',' '=' | sort > /tmp/control.txt; grep -v '^excepciones=' output/totales.txt | sort | diff /tmp/control.txt - && echo CUADRA
+CUADRA
+
