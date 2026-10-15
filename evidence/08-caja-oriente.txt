@@ -1,0 +1,44 @@
+# Incidente 8 - Extracto de Caja Oriente con otras columnas
+# Salida real de terminal, 2026-10-15 01:00
+
+$ head -3 data/extracto_caja_oriente.csv
+id_afiliado;nombres_apellidos;situacion;fecha_reporte
+000013022985;DANIELA LOPEZ OCHOA;VIGENTE;30/09/2026
+000013664691;VALENTINA DUARTE DIAZ;VIGENTE;30/09/2026
+
+$ head -1 data/AFI_MAE.csv
+NRO_DOC,TIP_DOC,NOM1,NOM2,APE1,APE2,EST_AFI,COD_EMP,FEC_AFI
+
+## Separador ';', documento de 12 digitos con ceros a la izquierda, situacion VIGENTE/RETIRADO
+$ awk -F';' 'NR>1{print length($1), $3}' data/extracto_caja_oriente.csv | sort | uniq -c
+     59 12 RETIRADO
+    266 12 VIGENTE
+
+## Cruce: se quitan los ceros con sed y se compara con EST_AFI (VIGENTE=A, RETIRADO=I)
+$ tail -n +2 data/extracto_caja_oriente.csv | cut -d';' -f1 | sed 's/^0*//' | head -3
+13022985
+13664691
+8811551262
+
+$ grep CRUCE_NO_COINCIDE output/excepciones.csv | cut -d, -f3 | sed 's/[0-9]\{4,\}/N/g' | sort | uniq -c
+      7 Caja Oriente reporta RETIRADO; EST_AFI local A
+      8 Caja Oriente reporta VIGENTE; EST_AFI local I
+     10 Caja Oriente reporta VIGENTE; no existe en AFI_MAE
+
+$ grep CRUCE_NO_COINCIDE output/excepciones.csv | head -5
+6060554836,CRUCE_NO_COINCIDE,Caja Oriente reporta RETIRADO; EST_AFI local A
+1008958781,CRUCE_NO_COINCIDE,Caja Oriente reporta RETIRADO; EST_AFI local A
+1002471016,CRUCE_NO_COINCIDE,Caja Oriente reporta VIGENTE; no existe en AFI_MAE
+60638164,CRUCE_NO_COINCIDE,Caja Oriente reporta RETIRADO; EST_AFI local A
+1043196119,CRUCE_NO_COINCIDE,Caja Oriente reporta VIGENTE; no existe en AFI_MAE
+
+$ grep -c CRUCE_NO_COINCIDE output/excepciones.csv
+25
+
+## El archivo de activos conserva el encabezado del contrato (no se mezclan columnas de Caja Oriente)
+$ head -1 output/afiliados_activos.csv
+documento,nombre,estado,cod_empresa,empresa,beneficiarios,ultimo_aporte
+
+$ awk -F, '{print NF}' output/afiliados_activos.csv | sort | uniq -c
+   1195 7
+
