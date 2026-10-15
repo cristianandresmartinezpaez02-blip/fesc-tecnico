@@ -34,3 +34,10 @@
 - Prompt principal (resumido): "Separa el curl y la respuesta JSON en la sección Uso sin comentarios que empiecen con #, y agrega tabla de resultados, diagrama mermaid y tabla de incidentes"
 - Qué produjo: un README con bloques bash y json separados, tablas de resultado, configuración, salidas e incidentes, y un diagrama de arquitectura en Mermaid
 - Qué modificó o corrigió el equipo: comprobamos con `./validator entregables` que el comentario `# {"documento"...}` del bloque de código se leía como título y cortaba la sección Uso (TE08 pasó de 1.82 a 2.00); además, un reemplazo con sed que la IA propuso para `run.sh` no se aplicó, lo detectamos leyendo el archivo y validamos con md5sum que las salidas no cambiaron
+
+## Uso 6
+- Herramienta: Claude
+- Para que se uso: entender el proyecto e instalar Docker Desktop en Windows para probarlo
+- Prompt principal (resumido): explicame como instalar Docker y como compruebo que el codigo funciona
+- Que produjo: pasos para instalar Docker con WSL y comandos para probar la API, el worker y el cierre
+- Que modifico o corrigio el equipo: el instalador fallo por falta de Virtual Machine Platform, lo resolvimos con wsl --install y usamos curl.exe porque en PowerShell curl abre otra herramienta
