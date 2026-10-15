@@ -1,0 +1,34 @@
+# Incidente 2 - La API no conecta a la base
+# Diagnostico (salida real de terminal, 2026-10-15 00:58)
+
+$ grep -c 'CIE-2210' logs/api.log logs/worker.log logs/database.log
+logs/api.log:0
+logs/worker.log:154
+logs/database.log:306
+
+$ grep -m 2 'CIE-2210' logs/worker.log
+[2026-09-30T20:35:22Z] [ERROR] codigo=CIE-2210 detalle="conexión rechazada para el usuario cierre_app" lote=209
+[2026-09-30T20:35:35Z] [ERROR] codigo=CIE-2210 detalle="conexión rechazada para el usuario cierre_app" lote=215
+
+$ grep -n 'DATABASE_HOST' services/api/app.py
+33:        host=os.environ.get("DATABASE_HOST", "localhost"),
+94:    log.info("cierre-api escuchando en el puerto %s (base: %s)", port, os.environ.get("DATABASE_HOST"))
+
+$ git show e9b29b3:.env.example | grep -n DATABASE_HOST
+7:DATABASE_HOST=cierre-database
+
+$ grep -E '^  [a-z-]+:$' docker-compose.yml
+  cierre-db:
+  cierre-api:
+  cierre-worker:
+  cierre-db-data:
+
+# El host cierre-database no es ningun servicio de docker-compose.yml; el servicio se llama cierre-db
+$ grep -n DATABASE_HOST .env.example
+7:DATABASE_HOST=cierre-db
+
+$ git diff e9b29b3 -- .env.example | grep -E '^[-+]DATABASE_HOST'
+-DATABASE_HOST=cierre-database
++DATABASE_HOST=cierre-db
+
+# Verificacion con Docker (pendiente de pegar: curl -i http://localhost:8081/afiliados/1098765432)
