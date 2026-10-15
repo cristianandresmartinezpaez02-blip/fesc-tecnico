@@ -1,0 +1,65 @@
+# Incidente 5 - Duplicados, afiliados sin empresa, beneficiarios huerfanos, codigos invalidos
+# Salida real de terminal, 2026-10-15 00:59
+
+$ tail -n +2 data/AFI_MAE.csv | wc -l
+1520
+
+$ tail -n +2 data/AFI_MAE.csv | cut -d, -f1 | sort -u | wc -l
+1500
+
+## DUPLICADO: documentos que aparecen mas de una vez
+$ tail -n +2 data/AFI_MAE.csv | cut -d, -f1 | sort | uniq -d | wc -l
+20
+
+$ tail -n +2 data/AFI_MAE.csv | cut -d, -f1 | sort | uniq -d | head -3
+1020751549
+1040982710
+1048335414
+
+## CODIGO_INVALIDO: EST_AFI distinto de A o I
+$ awk -F, 'NR>1{print $7}' data/AFI_MAE.csv | sort | uniq -c
+      3 9
+   1225 A
+    281 I
+      4 P
+      2 X
+      5 Z
+
+## SIN_EMPRESA: COD_EMP vacio o inexistente en EMPRESA (solo cuenta para activos)
+$ awk -F, 'NR==FNR{if(FNR>1)e[$1]=1;next} FNR>1 && !($8 in e){print $7" ["$8"]"}' data/EMPRESA.csv data/AFI_MAE.csv | sort | uniq -c
+      3 A [0000]
+      2 A [1999]
+      1 A [8888]
+      3 A [9999]
+      9 A []
+
+## BENEFICIARIO_HUERFANO: NRO_DOC_AFI que no existe en AFI_MAE
+$ awk -F, 'NR==FNR{if(FNR>1)m[$1]=1;next} FNR>1 && !($2 in m)' data/AFI_MAE.csv data/AFI_BEN.csv | wc -l
+15
+
+## Correccion en la base: db/init/03_limpieza.sql (borra duplicados conservando la primera
+## aparicion, crea indice unico y normaliza fechas). Lo irreparable va a excepciones.csv.
+$ grep -n -E 'DELETE|USING|ctid|UNIQUE' db/init/03_limpieza.sql
+7:--    ctid, es decir, la primera fila cargada desde AFI_MAE.csv).
+8:DELETE FROM afi_mae a
+9:USING afi_mae b
+11:  AND a.ctid > b.ctid;
+14:CREATE UNIQUE INDEX IF NOT EXISTS uq_afi_mae_doc ON afi_mae (nro_doc);
+
+## Resultado de ./run.sh
+$ cut -d, -f2 output/excepciones.csv | tail -n +2 | sort | uniq -c
+     15 BENEFICIARIO_HUERFANO
+     14 CODIGO_INVALIDO
+     25 CRUCE_NO_COINCIDE
+     20 DUPLICADO
+     12 FECHA_INVALIDA
+     18 SIN_EMPRESA
+
+$ grep -E 'DUPLICADO|SIN_EMPRESA|HUERFANO|CODIGO_INVALIDO' output/excepciones.csv | sort -t, -k2,2 -u
+1260428286,BENEFICIARIO_HUERFANO,NRO_DOC_AFI 1311452235 no existe en AFI_MAE
+1386135212,CODIGO_INVALIDO,EST_AFI Z no es A ni I
+3753924849,DUPLICADO,aparece 2 veces en AFI_MAE; se conserva la primera
+1078175958,SIN_EMPRESA,COD_EMP 1999 no existe en EMPRESA
+
+# Verificacion en cierre-db (pendiente de pegar):
+# docker compose exec cierre-db psql -U cierre -d cierre -c 'SELECT count(*), count(DISTINCT nro_doc) FROM afi_mae'
