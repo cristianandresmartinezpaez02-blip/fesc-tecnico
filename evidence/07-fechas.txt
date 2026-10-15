@@ -1,0 +1,87 @@
+# Incidente 7 - Fechas en formatos que el cierre no entiende
+# Salida real de terminal, 2026-10-15 01:00
+
+## Formatos de FEC_AFI (cada digito se reemplaza por 9 con sed para ver el patron)
+$ tail -n +2 data/AFI_MAE.csv | cut -d, -f9 | sed 's/[0-9]/9/g' | sort | uniq -c
+      1 99-99-9999
+     11 99/99/9999
+   1493 9999-99-99
+      1 9999/99/99
+     11 99999999
+      1 N/A
+      2 SIN FECHA
+
+## Fechas fuera del formato oficial YYYY-MM-DD
+$ awk -F, 'NR>1 && $9 !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ {print $1, $9}' data/AFI_MAE.csv
+13965503 01/07/2017
+88261956 16/01/2012
+3751473273 24/04/2012
+8867525906 03/08/2025
+6025635399 01/09/2020
+1052051148 31/13/2024
+37354788 05/04/2016
+3757045739 00000000
+13160996 20100915
+3794256776 20140412
+1058468350 SIN FECHA
+8816287637 20200611
+8853478971 20150622
+6089354914 31/13/2024
+60692566 SIN FECHA
+8874391659 00000000
+1333995086 07/11/2012
+8887622058 20211002
+3718603208 30/08/2023
+1013528826 27/11/2009
+1010631973 20100210
+6026309765 N/A
+1006623345 20191205
+1089064373 20110508
+6000574164 20180505
+8803649849 2023/02/29
+60087263 15-15-2019
+
+## Fechas con formato correcto pero imposibles (30 de febrero, mes 00)
+$ grep -n -E ',[0-9]{4}-(02-3[01]|00-|1[3-9]-)' data/AFI_MAE.csv
+77:1044259063,CC,FERNANDO,ANGELA,LOPEZ,RIVERA,A,1010,2025-02-30
+78:8830134354,CC,RICARDO,LUISA,ACEVEDO,MARTINEZ,A,1035,2025-02-30
+709:3709342692,CC,PATRICIA,CAMILO,PABON,CASTRO,A,1024,2024-00-10
+
+## Regla 5: DD/MM/YYYY y YYYYMMDD se normalizan; lo que no es fecha real -> FECHA_INVALIDA.
+## El afiliado sigue contando en totales (nunca se descarta en silencio).
+$ grep -n -A12 'function normaliza_fecha' scripts/cierre.sh
+49:function normaliza_fecha(f,    y, m, d) {
+50-    if (f ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) {
+51-        y = substr(f, 1, 4); m = substr(f, 6, 2); d = substr(f, 9, 2)
+52-    } else if (f ~ /^[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9][0-9][0-9]$/) {
+53-        d = substr(f, 1, 2); m = substr(f, 4, 2); y = substr(f, 7, 4)
+54-    } else if (f ~ /^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$/) {
+55-        y = substr(f, 1, 4); m = substr(f, 5, 2); d = substr(f, 7, 2)
+56-    } else {
+57-        return ""
+58-    }
+59-    if (!fecha_real(y + 0, m + 0, d + 0)) return ""
+60-    return y "-" m "-" d
+61-}
+
+$ grep FECHA_INVALIDA output/excepciones.csv
+1044259063,FECHA_INVALIDA,FEC_AFI no interpretable: 2025-02-30
+8830134354,FECHA_INVALIDA,FEC_AFI no interpretable: 2025-02-30
+1052051148,FECHA_INVALIDA,FEC_AFI no interpretable: 31/13/2024
+3757045739,FECHA_INVALIDA,FEC_AFI no interpretable: 00000000
+1058468350,FECHA_INVALIDA,FEC_AFI no interpretable: SIN FECHA
+3709342692,FECHA_INVALIDA,FEC_AFI no interpretable: 2024-00-10
+6089354914,FECHA_INVALIDA,FEC_AFI no interpretable: 31/13/2024
+60692566,FECHA_INVALIDA,FEC_AFI no interpretable: SIN FECHA
+8874391659,FECHA_INVALIDA,FEC_AFI no interpretable: 00000000
+6026309765,FECHA_INVALIDA,FEC_AFI no interpretable: N/A
+8803649849,FECHA_INVALIDA,FEC_AFI no interpretable: 2023/02/29
+60087263,FECHA_INVALIDA,FEC_AFI no interpretable: 15-15-2019
+
+$ grep FECHA_INVALIDA output/excepciones.csv | wc -l
+12
+
+## Ejemplo: 1052051148 tiene fecha invalida y es activo con empresa: sigue en el archivo de activos
+$ grep -c '^1052051148,' output/afiliados_activos.csv
+1
+
