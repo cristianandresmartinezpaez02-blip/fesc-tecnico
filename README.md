@@ -64,22 +64,41 @@ cierre-api y cierre-worker esperan a que cierre-db esté sana (`depends_on: cond
 
 ## Uso
 
-Consulta de un afiliado:
+Consulta de un afiliado con `GET /afiliados/{documento}`:
 
 ```bash
 curl http://localhost:8081/afiliados/1098765432
-# {"documento": "1098765432", "nombre": "JUAN CARLOS PEREZ GOMEZ", "estado": "ACTIVO", "empresa": "EMPRESA ABC"}
-curl -i http://localhost:8081/afiliados/0000000001   # documento inexistente -> 404
 ```
 
-`GET /afiliados/{documento}` devuelve `documento`, `nombre`, `estado` (`ACTIVO`, `INACTIVO` o `INVALIDO` si el código de estado no es válido) y `empresa` (vacía si el afiliado no tiene empresa válida).
+Respuesta (código 200):
+
+```json
+{
+  "documento": "1098765432",
+  "nombre": "JUAN CARLOS PEREZ GOMEZ",
+  "estado": "ACTIVO",
+  "empresa": "EMPRESA ABC"
+}
+```
+
+Documento inexistente:
+
+```bash
+curl -i http://localhost:8081/afiliados/0000000001
+```
+
+```json
+{"error": "afiliado no encontrado"}
+```
+
+La respuesta llega con código 404. El campo `estado` vale `ACTIVO`, `INACTIVO` o `INVALIDO` (código de estado distinto de A e I) y `empresa` va vacía si el afiliado no tiene empresa válida.
 
 `./run.sh` genera en `output/`:
 
 | Archivo | Contenido |
 |---|---|
-| `afiliados_activos.csv` | `documento,nombre,estado,cod_empresa,empresa,beneficiarios,ultimo_aporte`, un registro por afiliado activo con empresa válida; `ultimo_aporte` en `YYYY-MM` |
-| `excepciones.csv` | `documento,tipo,detalle` con DUPLICADO, SIN_EMPRESA, BENEFICIARIO_HUERFANO, CODIGO_INVALIDO, FECHA_INVALIDA y CRUCE_NO_COINCIDE |
+| `afiliados_activos.csv` | `documento,nombre,estado,cod_empresa,empresa,beneficiarios,ultimo_aporte`: un registro por afiliado activo con empresa válida; `ultimo_aporte` en `YYYY-MM` |
+| `excepciones.csv` | `documento,tipo,detalle` con `DUPLICADO`, `SIN_EMPRESA`, `BENEFICIARIO_HUERFANO`, `CODIGO_INVALIDO`, `FECHA_INVALIDA` y `CRUCE_NO_COINCIDE` |
 | `totales.txt` | `total_afiliados`, `activos`, `inactivos` y `excepciones` en formato `clave=valor` |
 | `top_error.txt` | `codigo_error` y `ocurrencias` del código `CIE-####` más frecuente en `logs/` |
 
