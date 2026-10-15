@@ -1,0 +1,69 @@
+# Incidente 6 - GET /afiliados/{documento} responde 500
+# Diagnostico (salida real de terminal, 2026-10-15 00:59)
+
+$ grep -c 'CIE-5003' logs/api.log
+700
+
+$ grep -m 2 'CIE-5003' logs/api.log
+2026-09-30 20:00:01,186 ERROR [cierre-api] CIE-5003 Error interno consultando afiliado documento=0709417377
+2026-09-30 20:00:10,350 ERROR [cierre-api] CIE-5003 Error interno consultando afiliado documento=4172279461
+
+$ git show e9b29b3:services/api/app.py | grep -n -E 'JOIN|nom1 \+|ESTADOS\['
+25:JOIN empresa e ON e.cod_emp = a.cod_emp
+53:    nombre = nom1 + " " + nom2 + " " + ape1 + " " + ape2
+54:    return {"documento": nro_doc, "nombre": nombre.strip(), "estado": ESTADOS[est_afi], "empresa": nom_emp}
+
+# En 02_load.sql la carga usa FORMAT csv: un campo vacio sin comillas llega como NULL.
+$ grep -n 'afi_mae' db/init/02_load.sql
+3:\copy afi_mae FROM '/data/AFI_MAE.csv' WITH (FORMAT csv, HEADER true)
+
+# Cuantos afiliados tienen NOM2 vacio (NULL en la base -> None + str = TypeError -> 500):
+$ awk -F, 'NR>1 && $4==""' data/AFI_MAE.csv | wc -l
+490
+
+$ grep -E '^(3756530718|88121168|6015866271),' data/AFI_MAE.csv
+88121168,CC,VALENTINA,,SANCHEZ,SILVA,I,1038,2024-02-02
+3756530718,CC,CAROLINA,,CASTRO,CASTELLANOS,A,1002,2015-03-18
+6015866271,CC,HERNAN,,MOLINA,RODRIGUEZ,A,1008,2020-01-04
+
+# Ademas: JOIN (no LEFT JOIN) daria 404 a un afiliado sin empresa, y ESTADOS[est_afi] lanza KeyError con codigos como P, X, Z, 9.
+$ awk -F, 'NR>1 && $7!="A" && $7!="I"{print $7}' data/AFI_MAE.csv | sort | uniq -c
+      3 9
+      4 P
+      2 X
+      5 Z
+
+# Correccion en services/api/app.py
+$ git diff e9b29b3 -- services/api/app.py
+diff --git a/services/api/app.py b/services/api/app.py
+index b50d7a4..5d43325 100644
+--- a/services/api/app.py
++++ b/services/api/app.py
+@@ -22,7 +22,7 @@ ROUTE = re.compile(r"^/afiliados/([0-9]+)$")
+ QUERY = """
+ SELECT a.nro_doc, a.nom1, a.nom2, a.ape1, a.ape2, a.est_afi, e.nom_emp
+ FROM afi_mae a
+-JOIN empresa e ON e.cod_emp = a.cod_emp
++LEFT JOIN empresa e ON e.cod_emp = a.cod_emp
+ WHERE a.nro_doc = %s
+ LIMIT 1
+ """
+@@ -50,8 +50,10 @@ def find_member(documento):
+     if row is None:
+         return None
+     nro_doc, nom1, nom2, ape1, ape2, est_afi, nom_emp = row
+-    nombre = nom1 + " " + nom2 + " " + ape1 + " " + ape2
+-    return {"documento": nro_doc, "nombre": nombre.strip(), "estado": ESTADOS[est_afi], "empresa": nom_emp}
++    # NOM2 y APE2 pueden venir vacíos (NULL en la base): se omiten del nombre.
++    nombre = " ".join(parte.strip() for parte in (nom1, nom2, ape1, ape2) if parte and parte.strip())
++    estado = ESTADOS.get(est_afi, "INVALIDO")
++    return {"documento": nro_doc, "nombre": nombre, "estado": estado, "empresa": nom_emp or ""}
+ 
+ 
+ class Handler(BaseHTTPRequestHandler):
+
+# Respuesta esperada (calculada desde data/ y verificada contra las huellas de .validator.json):
+$ awk -F, 'NR==FNR{if(FNR>1)e[$1]=$2;next} FNR>1 && $1=="3756530718"{n=$3; if($4!="")n=n" "$4; n=n" "$5; if($6!="")n=n" "$6; print "{\"documento\": \""$1"\", \"nombre\": \""n"\", \"estado\": \"ACTIVO\", \"empresa\": \""e[$8]"\"}"}' data/EMPRESA.csv data/AFI_MAE.csv
+{"documento": "3756530718", "nombre": "CAROLINA CASTRO CASTELLANOS", "estado": "ACTIVO", "empresa": "CONSTRUCTORA SAN LUIS S EN C"}
+
+# Verificacion con Docker (pendiente de pegar: curl -i http://localhost:8081/afiliados/3756530718 y /afiliados/0000000001)
