@@ -1,4 +1,5 @@
 # Incidente 1 - cierre-worker en Exited (1)
+# Conclusion: el worker se caia porque WORKER_INTERVAL_SECONDS=30s no es entero (CIE-1107); se corrigio a 30.
 # Diagnostico (salida real de terminal, 2026-10-15 00:57)
 
 $ grep -c 'CIE-1107' logs/worker.log

@@ -1,4 +1,5 @@
 # Incidente 9 - Totales que no cuadran con la hoja de control
+# Conclusion: totales.txt cuadra con la hoja de control: 1500 afiliados, 1194 activos y 274 inactivos.
 # Salida real de terminal, 2026-10-15 01:00
 
 $ cat control/hoja_control.csv

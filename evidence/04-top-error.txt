@@ -1,4 +1,5 @@
 # Incidente 4 - Miles de lineas de log: error mas frecuente
+# Conclusion: el error mas frecuente de los tres logs es CIE-4012 con 1424 ocurrencias.
 # Salida real de terminal, 2026-10-15 00:59
 
 $ wc -l logs/*.log

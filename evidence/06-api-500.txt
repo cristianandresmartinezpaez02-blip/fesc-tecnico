@@ -1,4 +1,5 @@
 # Incidente 6 - GET /afiliados/{documento} responde 500
+# Conclusion: el 500 venia de concatenar NOM2 vacio (NULL) con +; app.py ahora omite las partes vacias del nombre.
 # Diagnostico (salida real de terminal, 2026-10-15 00:59)
 
 $ grep -c 'CIE-5003' logs/api.log

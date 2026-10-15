@@ -1,4 +1,5 @@
 # Incidente 10 - El cierre solo funciona una vez
+# Conclusion: dos ejecuciones seguidas de ./run.sh producen archivos con el mismo sha256.
 # Salida real de terminal, 2026-10-15 01:00
 
 ## Causas en el script heredado (commit 'Importa el kit'):

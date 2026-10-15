@@ -1,4 +1,5 @@
 # Incidente 8 - Extracto de Caja Oriente con otras columnas
+# Conclusion: 25 CRUCE_NO_COINCIDE: 10 documentos que no existen y 15 con estado distinto; activos conserva 7 columnas.
 # Salida real de terminal, 2026-10-15 01:00
 
 $ head -3 data/extracto_caja_oriente.csv

@@ -1,4 +1,5 @@
 # Incidente 2 - La API no conecta a la base
+# Conclusion: la API buscaba el host cierre-database, que no existe; el servicio de la base se llama cierre-db.
 # Diagnostico (salida real de terminal, 2026-10-15 00:58)
 
 $ grep -c 'CIE-2210' logs/api.log logs/worker.log logs/database.log

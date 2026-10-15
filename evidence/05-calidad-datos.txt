@@ -1,4 +1,5 @@
 # Incidente 5 - Duplicados, afiliados sin empresa, beneficiarios huerfanos, codigos invalidos
+# Conclusion: 20 duplicados, 14 codigos invalidos, 18 activos sin empresa y 15 beneficiarios huerfanos, reportados en excepciones.csv.
 # Salida real de terminal, 2026-10-15 00:59
 
 $ tail -n +2 data/AFI_MAE.csv | wc -l

@@ -1,4 +1,5 @@
 # Incidente 3 - El script de cierre no lee su archivo de entrada
+# Conclusion: el cierre leia /opt/cierre/entrada (no existe); ahora lee data/ y ./run.sh termina con codigo 0.
 # Reproduccion con el kit original (copia limpia del commit 'Importa el kit'), 2026-10-15 00:58
 
 $ (cd /tmp/kit-original && bash ./run.sh)

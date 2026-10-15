@@ -1,4 +1,5 @@
 # Incidente 7 - Fechas en formatos que el cierre no entiende
+# Conclusion: 18 fechas en otros formatos se normalizan y 12 fechas imposibles se reportan como FECHA_INVALIDA.
 # Salida real de terminal, 2026-10-15 01:00
 
 ## Formatos de FEC_AFI (cada digito se reemplaza por 9 con sed para ver el patron)
