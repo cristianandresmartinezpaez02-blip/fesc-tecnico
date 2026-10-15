@@ -6,8 +6,8 @@ Sistema de cierre mensual de afiliados de una Caja de Compensación Familiar. A 
 
 ## Integrantes
 
-- <NOMBRE 1>
-- <NOMBRE 2>
+- Cristian Andres Martinez Paez
+- Rasmir Eduardo Rincon
 
 ## Requisitos
 
