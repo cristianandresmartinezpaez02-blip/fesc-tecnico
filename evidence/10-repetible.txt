@@ -1,0 +1,56 @@
+# Incidente 10 - El cierre solo funciona una vez
+# Salida real de terminal, 2026-10-15 01:00
+
+## Causas en el script heredado (commit 'Importa el kit'):
+$ git show e9b29b3:scripts/cierre.sh | grep -n -E 'mkdir|>> |mv '
+11:mkdir $SALIDA
+18:    $ENTRADA/AFI_MAE.csv >> $SALIDA/afiliados_activos.csv
+28:echo "total_afiliados=$TOTAL" >> $SALIDA/totales.txt
+29:echo "activos=$ACTIVOS" >> $SALIDA/totales.txt
+32:mkdir -p $ENTRADA/procesados
+33:mv $ENTRADA/AFI_MAE.csv $ENTRADA/procesados/
+[codigo de salida: 0]
+
+## 1) mkdir sin -p falla la segunda vez; 2) totales.txt se agregaba con >>;
+## 3) mv sacaba AFI_MAE.csv de la entrada, asi la siguiente corrida no tenia datos.
+## Ahora: mkdir -p, salidas en temporal y luego cp (sobrescribe), entrada solo lectura, LC_ALL=C.
+$ grep -n -E 'mkdir|mktemp|LC_ALL|cp "' scripts/cierre.sh
+20:export LC_ALL=C
+29:mkdir -p "$SALIDA"
+30:TMP="$(mktemp -d)"
+197:cp "$TMP/top_error.txt" "$SALIDA/top_error.txt"
+202:    cp "$TMP/$archivo" "$SALIDA/$archivo"
+[codigo de salida: 0]
+
+## Dos ejecuciones seguidas
+$ rm -rf output && ./run.sh > /dev/null && sha256sum output/* > /tmp/corrida1.txt && cat /tmp/corrida1.txt
+2b533c99ec01918a60a7ce2f1795eb64c4acf5a82c01e88c583247175f1e9341 *output/afiliados_activos.csv
+d30d389cfd7aa17230967cfd260de92aed708f50201ca761aa546483e1a5a78b *output/excepciones.csv
+be92aa0328bd49cfa0d6157537090e3e39ddb66061663b8893e4c93c5b40869a *output/top_error.txt
+7674ec35ee1b7ce77af19f414fc65f9dae907de4f713234b0d22f6d46494da4f *output/totales.txt
+[codigo de salida: 0]
+
+$ ./run.sh > /dev/null && sha256sum output/* > /tmp/corrida2.txt && cat /tmp/corrida2.txt
+2b533c99ec01918a60a7ce2f1795eb64c4acf5a82c01e88c583247175f1e9341 *output/afiliados_activos.csv
+d30d389cfd7aa17230967cfd260de92aed708f50201ca761aa546483e1a5a78b *output/excepciones.csv
+be92aa0328bd49cfa0d6157537090e3e39ddb66061663b8893e4c93c5b40869a *output/top_error.txt
+7674ec35ee1b7ce77af19f414fc65f9dae907de4f713234b0d22f6d46494da4f *output/totales.txt
+[codigo de salida: 0]
+
+$ diff /tmp/corrida1.txt /tmp/corrida2.txt && echo IDENTICAS
+IDENTICAS
+[codigo de salida: 0]
+
+## La entrada no se toca
+$ git status --short data/
+[codigo de salida: 0]
+
+$ ls data/
+AFI_BEN.csv
+AFI_MAE.csv
+APORTES.csv
+EMPRESA.csv
+extracto_caja_oriente.csv
+[codigo de salida: 0]
+
+## Despues de ./reset.sh (borra output/ y la base) + ./run.sh dos veces: pendiente de pegar con Docker
