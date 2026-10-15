@@ -1,0 +1,61 @@
+# Incidente 3 - El script de cierre no lee su archivo de entrada
+# Reproduccion con el kit original (copia limpia del commit 'Importa el kit'), 2026-10-15 00:58
+
+$ (cd /tmp/kit-original && bash ./run.sh)
+Leyendo afiliados desde /opt/cierre/entrada/AFI_MAE.csv
+awk: fatal: cannot open file `/opt/cierre/entrada/AFI_MAE.csv' for reading: No such file or directory
+[codigo de salida: 2]
+
+$ grep -n 'ENTRADA=' /tmp/kit-original/scripts/cierre.sh
+8:ENTRADA=/opt/cierre/entrada
+[codigo de salida: 0]
+
+$ ls -l /opt/cierre/entrada
+ls: cannot access '/opt/cierre/entrada': No such file or directory
+[codigo de salida: 2]
+
+$ find . -name 'AFI_MAE.csv' -not -path './.git/*'
+./data/AFI_MAE.csv
+[codigo de salida: 0]
+
+$ (cd /tmp/kit-original && bash ./run.sh)
+mkdir: cannot create directory 'output': File exists
+[codigo de salida: 1]
+
+# La segunda corrida falla en 'mkdir output' porque la carpeta ya existe (set -e).
+# Permisos: run.sh y scripts/cierre.sh quedan registrados en Git como ejecutables (100755) para el servidor Linux.
+$ git ls-files -s run.sh reset.sh scripts/cierre.sh
+100755 89ca91da5c92dffed62d0fed1d61f76576a6ecc4 0	reset.sh
+100755 ae59c76bc912ddc1938f01cb738907ed66702773 0	run.sh
+100755 554ebb5cd22a159047667052b219cdad42c2f171 0	scripts/cierre.sh
+[codigo de salida: 0]
+
+$ chmod +x run.sh scripts/cierre.sh && ls -l run.sh scripts/cierre.sh
+-rwxr-xr-x 1 Usuario 197121  764 Oct 15 00:56 run.sh
+-rwxr-xr-x 1 Usuario 197121 7608 Oct 15 00:56 scripts/cierre.sh
+[codigo de salida: 0]
+
+# Correccion: ENTRADA apunta a data/ del repositorio (ruta relativa al script)
+$ grep -n 'ENTRADA=' scripts/cierre.sh
+15:ENTRADA="${CIERRE_ENTRADA:-$RAIZ/data}"
+[codigo de salida: 0]
+
+$ rm -rf output && ./run.sh
+Leyendo afiliados desde /c/xampp/htdocs/fesc-tecnico/data/AFI_MAE.csv
+Cierre terminado:
+total_afiliados=1500
+activos=1194
+inactivos=274
+excepciones=104
+codigo_error=CIE-4012
+ocurrencias=1424
+[codigo de salida: 0]
+
+$ ls -l output/
+total 110
+-rw-r--r-- 1 Usuario 197121 101301 Oct 15 00:58 afiliados_activos.csv
+-rw-r--r-- 1 Usuario 197121   6785 Oct 15 00:58 excepciones.csv
+-rw-r--r-- 1 Usuario 197121     39 Oct 15 00:58 top_error.txt
+-rw-r--r-- 1 Usuario 197121     64 Oct 15 00:58 totales.txt
+[codigo de salida: 0]
+
